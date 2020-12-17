@@ -14,7 +14,7 @@ from PIL import Image
 
 def get_all_files(folder, ext):
     
-    # Le paso filepath y un string con el tipo de archivo que busco, devuelve list con todos los archivos
+    # Receives a filepath and a string with the desired file extension, returns list with all the files inside said folder
     
     all_files = []
     #Iterate through all files in folder
@@ -32,12 +32,12 @@ def get_all_files(folder, ext):
 
 def get_average(filepaths):
 
-     # Le paso filepath de la carpeta con imagenes, devuelve el average grabandolo en root folder 
-
+    # Receives a filepath with images, returns an average image of all pictures, saving it to the root folder
+    
     try:    
         im = Image.open(filepaths[0])
     except: 
-        print("Error en la primera imagen")
+        print("Error in the first image")
         
     width, height = im.size
            
@@ -66,7 +66,7 @@ def get_average(filepaths):
 
 def get_eucdistance(picarray, avearray):
 
-    # Recibe 2 array de imagenes, devuelve la disgtancia eculediana    
+    # Receives 2 numpy array of images, returns euclidean distance    
 
     width, height, color = avearray.shape
     result = np.zeros([width, height, color])
@@ -81,6 +81,8 @@ def get_eucdistance(picarray, avearray):
     return sigma
      
 def get_test(filepaths):
+    
+    # Receives a filepath to a folder, creates a database with all the information and analysis. 
     
     df = pd.DataFrame()
     
@@ -130,6 +132,9 @@ def get_test(filepaths):
     return df
     
 def get_results(test):
+    
+    # Receives a filepath to and Excel containing test results. Returns information regarding said results.
+    
     df = pd.read_excel(test)
     
     df.loc[0, 'Index'] = 'Average'
@@ -153,7 +158,9 @@ def get_results(test):
     return df
 
 def get_bnwhistogram(filepath):
-    # Retorna histograma de la imagen en blanco y negro
+    
+    # Receives filepath to image, returns said image in greyscale
+    
     try:    
         im = Image.open(filepath)
     except: 
@@ -176,7 +183,7 @@ def get_bnwhistogram(filepath):
 
 def get_colorhistogram(picarray):
 
-    # Recibe array de la imagen, devuelve el el histograma a color    
+    # Receives numpy array of image, returns color histogram
 
     width, height, color = picarray.shape     
    
@@ -196,14 +203,13 @@ def get_colorhistogram(picarray):
     histB = np.array(histB) / (height * width)        
 
     hist = (histR, histG, histB)
-    
-    # Retorna lista de 3 arrays, equivalente a los histogramas RGB
-    
+        
     return hist
 
 def getseg(filepath, sx, sy):
     
-    # Se le pasa el filepath a la imagen, retorna sx*sy segmentos de la imagen como listado de arrays
+    # Receives filepath to image, amount of x and y divisions
+    # Returns list of image segments
     
     #sx: qty of x divisions
     #sy: qty of y divisions
@@ -246,7 +252,7 @@ def getseg(filepath, sx, sy):
 
 def get_subdirs(filepath):
     
-    # Busca todos los subdirectorios y retorna 0 cuando no hay subcarpetas
+    # Receives filepath to folder, returns all containing subdirectories
     
     aux = []
     for entry in os.scandir(path=filepath):
@@ -258,7 +264,7 @@ def get_subdirs(filepath):
     
 def get_average_analysis(filepath):
     
-    # Genera un pd dataframe con analsis de una imagen contra todos los average
+    # Receives filepath to image, returns database with all analysis of image against all average pictures
     
     ave_images = get_all_files(average, 'jpg')
     data = pd.DataFrame()
@@ -270,8 +276,7 @@ def get_average_analysis(filepath):
 
 def get_prediction(fp):
 
-    # Recibe un filepath de una imagen y la compara contra todos los average
-    # Retorna su estimate  
+    # Receives filepath to image, returns best estimate of orientation
     
     [model, scaler] = get_model_scaler()
     analysis = get_average_analysis(fp)
@@ -296,7 +301,8 @@ def get_prediction(fp):
     
 def get_rawdb(filepaths):
     
-    # Se le pasa un filepath y genera excel con la informacion basica de las imagenes en el directorio
+    # Receives filepath to folder contating images, returns dataframe with basic information and labels as an alternative way of training
+    # Useful when saving dataframe to Excel for easy viewing
     
     df = pd.DataFrame()
     
@@ -318,13 +324,13 @@ def get_rawdb(filepaths):
         df.loc[i, 'Predicted Direction'] = 0
         df.loc[i, 'Real Direction'] = 0
         df.loc[i, 'Real Direction w/ offset'] = 0
-        df.loc[i, 'Flag'] = 0 #Con esto determino si lo uso para ML o no      
+        df.loc[i, 'Flag'] = 0 # If changed to 1, the model will use it for training   
  
     return df    
 
 def get_rawdb(filepaths, cctv, year, month, day):
     
-    #Mismo que su homonimo, pero funciona mas rapido
+    # Overloaded method for efficency
     
     df = pd.DataFrame()
     aux = len(filepaths)
@@ -346,19 +352,19 @@ def get_rawdb(filepaths, cctv, year, month, day):
     df.loc[:, 'Predicted Direction'] = aux2
     df.loc[:, 'Real Direction'] = aux2
     df.loc[:, 'Real Direction w/ offset'] = aux2
-    df.loc[:, 'Flag'] = aux2 #Con esto determino si lo uso para ML o no
+    df.loc[:, 'Flag'] = aux2 
        
     return df   
    
 def score_model(probs, threshold):
     
-    # Retorna 1 si la probabilidad de que sea true esta por encima del threshold
+    # Returns 1 if estimate is more than the defined threshold
     
     return np.array([1 if x > threshold else 0 for x in probs[:,1]])
 
 def print_metrics(labels, scores):
     
-    # Crea plots con el accuracy del modelo. Suponiendo que se le pasa los labels reales
+    # Creates plots with model accuracy. Only useful when real labels are provided
     
     metrics = sklm.precision_recall_fscore_support(labels, scores)
     conf = sklm.confusion_matrix(labels, scores)
@@ -377,8 +383,7 @@ def print_metrics(labels, scores):
 
 def plot_auc(labels, probs):
     
-    ## Compute the false positive rate, true positive rate
-    ## and threshold along with the AUC
+    # Compute the false positive rate, true positive rate and threshold along with the AUC
     
     fpr, tpr, threshold = sklm.roc_curve(labels, probs[:,1])
     auc = sklm.auc(fpr, tpr)
@@ -394,6 +399,9 @@ def plot_auc(labels, probs):
     plt.show()
 
 def is_number(val):
+    
+    # Receives value, determines if it is a integer value
+    
     try:
         int(val)
         return True
@@ -401,7 +409,8 @@ def is_number(val):
         return False
 
 def find_pictures(fp):
-    # Busca todos las imagenes en un filepath dado, retorna un df con la infomrmacion basica
+    
+    # Receives filepath to folder containing subdirectories, returns all images information in a dataframe
     
     months_dir = get_subdirs(fp)
     df = pd.DataFrame()
@@ -422,7 +431,6 @@ def find_pictures(fp):
         days_dir = get_subdirs(month)   
         
         for day in days_dir:
-            # print(day)
             jpg_files = get_all_files(day, 'jpg')
             fol_day = int(day[index+25]+day[index+26])
             df = df.append(get_rawdb(jpg_files, fol_cctv, fol_year, fol_month, fol_day))
@@ -431,7 +439,7 @@ def find_pictures(fp):
 
 def read_db(file):
     
-    # Recibe nombre de Excel con el db basico, devuelve pandas con las imagenes indicadas para entrenar el modelo
+    # Receives string with Excel name, returns dataframe with the information of images for model training
     
     db = pd.read_excel(file, index_col=[0])
 
@@ -439,8 +447,8 @@ def read_db(file):
 
 def save_analysis(db):
     
-    # Recibe un excel con la raw data de cada imagen y genera analisis de todas las imagenes contra los average
-    # Retorna pandas con todos los analsis y lo guarda en un pickle 
+    # Receives excel with raw data of each image, generates analysis of all images against all averages
+    # Returns dataframe and saves it in a pickle
     
     db = read_db(db)
     
@@ -483,7 +491,7 @@ def save_analysis(db):
 
 def load_pickle(pfile):
     
-    # Se le pasa filepath del pickle y retorna pandas df con la informacion
+    # Receives filepath of a pickle, returns it as a dataframe
     
     pdata = pd.DataFrame()
     pdata = pickle.load(open(pdata, "rb"))
@@ -492,7 +500,7 @@ def load_pickle(pfile):
 
 def get_iterative_analysis(f1, f2):
     
-    #Retorna analsis entre dos imagenes, al pasarle los filepath de cada uno
+    # Receives filepath of 2 images, returns analysis as a dataframe
     
     data = pd.DataFrame()
     picarray = np.array(Image.open(f1))
@@ -535,8 +543,7 @@ def get_iterative_analysis(f1, f2):
 
 def direction_change(fp):
     
-    # De un directorio o lista de imagenes, se analiza si hay cambio de ubicacion de imagen a imagen
-    # Basado en el modelo y scaler ya entrenado 
+    # Receives image list or filepath to directory, analyzes if there is a direction change from one picture to the other
     
     jpg_files = return_files(fp)
     [model, scaler] = get_model_scaler()
@@ -566,11 +573,11 @@ def direction_change(fp):
 
 def train_set(folderA, folderB):
     
-    # Metodo para generar scaler y modelo a partir de imagenes seleccionadas
-    # 2 carpetas, cada una con misma cantidad de imagenes
-    # Nombre de las imagenes: "A-B", ejemplo 11-1 
-    # Siendo A numero de imagen y B corresponde a 0 o 1 indicando si es true or false que es la misma direccion
-    # Se guarda una copia del analisis en un excel
+    # Receives 2 filepaths to folders containing chosen images for training
+    # Creates scaler and model, saving them as a pickle
+    # The images are named "A-B", being A the number of picture, and B if it is the same orientation or not (1 or 0)
+    # Creates a copy of the analysis in and Excel for easy viewing
+    # Prints results of model
     
     excelname = 'TestAnalysis.xlsx'
     
@@ -634,14 +641,12 @@ def train_set(folderA, folderB):
     
     pickle.dump(logistic_mod, open("model.pickle", 'wb'))
     pickle.dump(scaler, open("scaler.pickle", 'wb'))
-    
-    # Metodo para leer todos los jpg y adjuntar el analisis. Grabar todo, scaler y model en Pickle        
+       
     return
 
 def return_files(fp):
     
-    # Siempre devuelve listado de archivos, recibe un filepath y devuelve sus imagenes
-    # Retorna False si no es listado ni str
+    # Receives filepaths as a string or list format, returns list of images filepaths
     
     if(isinstance(fp, str)): return get_all_files(fp, 'jpg')
     elif(isinstance(fp, list)): return fp
@@ -650,7 +655,7 @@ def return_files(fp):
 
 def get_model_scaler():
     
-    # Retorna el modelo y el scaler guardados en formato pickle
+    # Reads pickles to return model and scaler
     
     with open(modelfile, 'rb') as file:  
         model = pickle.load(file)
@@ -661,7 +666,7 @@ def get_model_scaler():
 
 def get_ave_fp(index):
     
-    # Recibe el index del best estimate en el average folder y retorna su filepath 
+    # Receives index of best estimate, returns its filepath
     
     average_pics = get_all_files(average, 'jpg')
     
