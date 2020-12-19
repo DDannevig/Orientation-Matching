@@ -549,7 +549,8 @@ def direction_change(fp):
     [model, scaler] = get_model_scaler()
     
     results = pd.DataFrame()
-    probabilities = scores = np.zeros(len(jpg_files) - 1)
+    probabilities = np.zeros(len(jpg_files) - 1)
+    scores = np.zeros(len(jpg_files) - 1)
     featlist = []
         
     for i in range(len(jpg_files)-1):
